@@ -3,13 +3,6 @@
   vars_files:
     - vars.yml
   tasks:
-    - name: Ligne stretch-backports repository /etc/apt/sources.list commentée
-      lineinfile:
-        path: /etc/apt/sources.list
-        regexp: '^deb http://deb.debian.org/debian stretch-backports main'
-        line: '# \g<0>'
-        backup: yes
-        backrefs: yes
     - name: Update et upgrade apt packages
       apt:
         update_cache: yes
