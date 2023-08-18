@@ -1,0 +1,36 @@
+---
+- hosts: all
+  become: yes
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Ligne stretch-backports repository /etc/apt/sources.list commentée
+      lineinfile:
+        path: /etc/apt/sources.list
+        regexp: '^deb http://deb.debian.org/debian stretch-backports main'
+        line: '# \g<0>'
+        backup: yes
+        backrefs: yes
+    - name: Update et upgrade apt packages
+      apt:
+        update_cache: yes
+    - name: Installation software-properties-common
+      apt:
+        name: "{{ spc }}"
+    #     state: present
+    # - name: Installation suricata
+    #   apt:
+    #     name: "suricata"
+    #     state: present
+    # - name: Lancement de Suricata
+    #   systemd:
+    #     name: "{{ suricata_service }}"
+    #     state: started
+    #     enabled: true
+    #     daemon_reload: true
+
+    # - name: Restart Suricata
+    #   systemd:
+    #     state: restarted
+    #     daemon_reload: true
+    #     name: "{{ suricata_service }}"

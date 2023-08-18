@@ -1,0 +1,39 @@
+- hosts: all
+  become: yes
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Ligne stretch-backports repository /etc/apt/sources.list commentée
+      lineinfile:
+        path: /etc/apt/sources.list
+        regexp: '^deb http://deb.debian.org/debian stretch-backports main'
+        line: '# \g<0>'
+        backup: yes
+        backrefs: yes
+    - name: Update et upgrade apt packages
+      apt:
+        update_cache: yes
+    - name: Installation software-properties-common
+      apt:
+        name: "{{ spc }}"
+        state: present
+    - name: Installation apache2
+      apt:
+        name: "{{ apache_service }}"
+        state: latest
+    - name: Démarrage apache2
+      systemd:
+        name: "{{ apache_service }}"
+        state: started
+    - name: Modif de apache2.conf
+      lineinfile:
+        path: "{{ apache_conf_file }}"
+        regexp: '^ServerAdmin'
+        line: 'ServerAdmin test1@fr.clara.net'
+      notify:
+      - Rédémarrage apache2
+  handlers:
+    - name: Rédémarrage apache2
+      systemd:
+        name: "{{ apache_service }}"
+        state: restarted

@@ -1,0 +1,14 @@
+---
+suricata_repo: ppa:oisf/suricata-stable
+spc: 
+  - software-properties-common
+  #- gnupg
+apt_dependencies: 
+  - suricata
+pip_dependencies: 
+  - secure-smtplib
+suricata_update_rules: suricata-update
+suricata_conf_template: suricata_conf_template.j2
+suricata_conf_path: /etc/suricata/suricata.yaml
+local_rules_path: /etc/suricata/rules/local.rules
+suricata_service: suricata.service

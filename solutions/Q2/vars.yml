@@ -1,0 +1,7 @@
+admin_user: devops
+admin_group: sudo
+admin_password: password
+admin_path: /tmp/devops
+admin_repo_mode: 0755
+blank_file: ./blank_file.txt
+file_mode: 0644
