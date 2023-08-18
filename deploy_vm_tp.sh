@@ -31,6 +31,7 @@ createContainers(){
 		sudo podman cp ${HOME}/.ssh/id_rsa.pub ${CONTAINER_USER}-debian-$i:${CONTAINER_HOME}/.ssh/authorized_keys
 		${CONTAINER_CMD} ${CONTAINER_USER}-debian-$i /bin/sh -c "chmod 600 ${CONTAINER_HOME}/.ssh/authorized_keys && chown ${CONTAINER_USER}:${CONTAINER_USER} ${CONTAINER_HOME}/.ssh/authorized_keys"
 		${CONTAINER_CMD} ${CONTAINER_USER}-debian-$i /bin/sh -c "echo '${CONTAINER_USER}   ALL=(ALL) NOPASSWD: ALL'>>/etc/sudoers"
+    ${CONTAINER_CMD} ${CONTAINER_USER}-debian-$i /bin/sh -c "sed -i 's#deb http://deb.debian.org/debian stretch-backports main#deb http://archive.debian.org/debian stretch-backports main#' /etc/apt/sources.list"
 		${CONTAINER_CMD} ${CONTAINER_USER}-debian-$i /bin/sh -c "service ssh start"
 	done
 
