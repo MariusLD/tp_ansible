@@ -1,3 +1,5 @@
+#!/bin/bash
+
 set -eo pipefail
 
 CONTAINER_USER=$USER
