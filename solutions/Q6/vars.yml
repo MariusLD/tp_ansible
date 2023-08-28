@@ -1,4 +1,0 @@
-apache_service: apache2
-apache_conf_file: /etc/apache2/apache2.conf
-spc: 
-  - software-properties-common

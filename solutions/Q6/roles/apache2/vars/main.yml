@@ -1,4 +1,4 @@
+---
 apache_service: apache2
 apache_conf_file: /etc/{{ apache_service }}/{{ apache_service }}.conf
-spc: 
-  - software-properties-common
+server_admin: test1@fr.clara.net

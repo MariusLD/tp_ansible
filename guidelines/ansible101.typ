@@ -94,13 +94,18 @@ ansible --version
 
 #align(left, text(17pt)[*Déploiement de nœuds*])
 
-Comme dit plus tôt, il va falloir déployer des nœuds qui seront les terrains de jeux de nos playbooks ! Le TP n'étant pas dédié au déploiement de VMs, vous allez donc pouvoir récupérer un Dockerfile ainsi qu'une script à l'adresse suivante : \
+Comme dit plus tôt, il va falloir déployer des nœuds qui seront les terrains de jeux de nos playbooks ! Le TP n'étant pas dédié au déploiement de VMs, vous allez donc pouvoir récupérer un script à l'adresse suivante : #set text(fill: blue); https://github.com/MariusLD/tp_ansible.git \
+#set text(fill: black);
 
-Pour exécuter le script il faudra cependant disposer de : Docker et podman.
+Pour exécuter le script il faudra cependant disposer de : _podman_.  
 ```sh
 sudo apt-get -y install podman
 ```
-Si j'ai correctement fait mon travail vous devriez désormai pouvoir créer vos nœuds aisément en effectuant la commande :
+Il est également nécessaire de disposer d'une clé SSH pour vous connecter aux nœuds avec Ansible. Le nom de la clé par défaut appelée par le script est _id_rsa_. Si vous ne possédez pas de clé portant ce nom, petit rappel, vous pouvez la générer avec :
+```sh
+ssh-keygen -t rsa -b 2048
+```
+Vous devriez désormai pouvoir créer vos nœuds aisément en effectuant la commande :
 ```sh
 ./deploy_vm_tp.sh -c <nombre de machines à générer>
 ```
@@ -108,20 +113,25 @@ La liste des machines créées sera affichée à la fin de l'exécution du scrip
 Vous pourrez stopper les machines avec la commande :
 ```sh
 ./deploy_vm_tp.sh -t
-# Avec la possibilité de les relancer par la suite
+```
+Avec la possibilité de les relancer par la suite :
+```sh
 ./deploy_vm_tp.sh -s
 ```
-ou bien les supprimer définitivement avec :
+Ou bien (toutes) les supprimer définitivement avec :
 ```sh
 ./deploy_vm_tp.sh -d
 ```
-#v(10pt)
+Toutes ces options sont également disponibles en exécutant le script sans arguments. \
+
+#pagebreak()
 
 #align(left, text(17pt)[*Création de l'inventaire*])
 
-Pour cette étape, l'objectif est de définir un fichier qui va donner les instructions aux playbooks pour savoir « chez qui » ils vont devoir effectuer les tâches.
+Pour cette étape, l'objectif est de définir un fichier qui va donner les instructions aux playbooks pour savoir « chez qui » (hosts ou groupes) ils vont devoir effectuer les tâches.
 Il peut alors s'agir d'un nœuds ou bien d'un groupe de nœuds. \
-Par défaut le groupe *all*  est le groupe global qui comprendra tous nos nœuds. \
+Par défaut le groupe *all*  est le groupe racine qui comprendra tous nos nœuds. \
+Il existe différents formats d'inventaire : init, yaml, json... Nous allons d'abord voir la structure de l'inventaire au format init, puis nous passerons au format yaml qui est plus modulable et plus facile à manipuler. \
 Avec votre éditeur de texte préféré vous allez pouvoir créer un fichier nommé « inventory.yml » où la structure par défaut sera :
 ```yml
 [all]
@@ -133,45 +143,85 @@ L'inventaire ci-dessus indique donc aux playbooks qu'il y a deux machines à tra
 
 Les groupes permettent d'isoler certains nœuds pour leur attribuer un playbook spécifique. Pour créer un groupe il suffit de définir un nom entre crochets et de lister les nœuds qui en feront partie, par exemple nous pouvons avoir : \
 ```yml
-[all]
-ansible_host_1: <adresse IP du nœud ansible_host_1>
-ansible_host_2: <adresse IP du nœud ansible_host_2>
+[parent1]
+ansible_host_1: <adresse IP du nœud ansible_host_4>
 
-ansible_host_3: <adresse IP du nœud ansible_host_3>
-ansible_host_4: <adresse IP du nœud ansible_host_4>
+[enfant1]
+ansible_host_2: <adresse IP du nœud ansible_host_1>
+ansible_host_3: <adresse IP du nœud ansible_host_2>
 
-[PremierGroupe]
-ansible_host_2
+[enfant2]
+ansible_host_4: <adresse IP du nœud ansible_host_3>
 
-[SecondGroupe]
-ansible_host_3
+[enfant3]
+ansible_host_5: <adresse IP du nœud ansible_host_3>
 
-[TroisièmeGroupe]
-PremierGroupe
-SecondGroupe
+[parent1:children]
+enfant1
+enfant2
+
+[enfant2:children]
+enfant3
 ```
-Ici *all* contient :
-- les nœud _ansible_host_1_, _ansible_host_2_, _ansible_host_3_ et _ansible_host_4_
-Le *PremierGroupe* contient :
+Ici *parent1* contient :
+- les nœud _ansible_host_1_
+*enfant1* contient :
 - le nœud _ansible_host_2_
-Le *SecondGroupe* contient :
-- le nœud _ansible_host_3_ et _ansible_host_4_ 
-Et le *TroisièmeGroupe* contient :
-- le groupe *PremierGroupe*
-- le groupe *SecondGroupe* \
+- le nœud _ansible_host_3_
+*enfant2* contient :
+- le nœud _ansible_host_4_
+*enfant3* contient :
+- le nœud _ansible_host_5_ 
+\
+
+*parent1* contient :
+- le groupe *enfant1*
+- le groupe *enfant2*
+*enfant2* contient :
+- le groupe *enfant3* \
+
+Nous retrouvons alors une structure en forme d'arbre, où les groupes peuvent être imbriqués les uns dans les autres. \
+
+Pour de petites inventaires le format init est suffisant, mais pour des inventaires plus conséquents il est préférable d'utiliser le format yaml. \
+Pour cela il suffit de créer un fichier _inventory.yml_, et l'équivalent structurel de l'exemple précédent est :
+```yml
+---
+all:
+  children:
+    parent1:
+      hosts:
+        ansible_host_1:
+      children:
+        enfant1:
+          hosts:
+            ansible_host_2:
+            ansible_host_3:
+        enfant2:
+          hosts:
+            ansible_host_4:
+          children:
+            enfant3:
+            hosts:
+              ansible_host_5:
+```
 
 #v(10pt)
 
 #text(style: "italic")[
-  Q1) Créez 4 nouveaux nœuds, ajoutez-les à l'inventaire en reprenant la structure ci-dessus.\
+  Q1) Créez 5 nouveaux nœuds, ajoutez-les à l'inventaire en reprenant la structure ci-dessus.\
   Puis testez votre inventaire grâce à la commande :
   ```sh
     ansible <groupe> -m ping -i inventory.yml
   ```
-  Si tout se déroule comme prévu, vous ne verrez que les *pongs* des nœuds faisant partie du groupe renseigné.
+  Attention à l'indentation en YAML, un espace de moins ou de plus peut changer la signification d'un fichier de configuration !
+  Si tout se déroule comme prévu, vous ne verrez que les *pongs* des nœuds faisant partie du groupe renseigné. 
 ]
 
+Pour la suite, vous pouvez supprimer tous les nœuds créés pour réduire le temps d'exécution des prochains exercices, et en déployer un nouveau. Pour ce qui est de l'inventaire, maintenant que vous avez compris le principe, vous pouvez soit le refaire, soit profiter de l'option -a du script _deploy_vm_tp.sh_ pour vous le générer automatiquement dans _/ansible_dir/00_inventaire.yaml_
+
 #v(10pt)
+
+#pagebreak()
 
 #align(left, text(17pt)[*Prise en main des playbooks Ansible*])
 
@@ -187,8 +237,6 @@ Pour ça, un playbook Ansible aura la structure de base suivante :
     - name: <nom de la tâche>
     [...]
 ```
-
-#pagebreak()
 
 #align(left, text(17pt)[*Ansible playbook cheat sheet*])
 
@@ -274,6 +322,7 @@ Une bien meilleure pratique est de définir un fichier de variables à part, com
 variable_test: test
 [...]
 ```
+#pagebreak()
 Puis l'intérêt est de l'inclure dans le playbook :
 ```yml
 ---
@@ -283,7 +332,7 @@ Puis l'intérêt est de l'inclure dans le playbook :
   tasks:
   [...]
 ```
-Il est alors possible d'appeler les variables aisément dans le playbook : _"{{ variable_test }}"_, par exemple pour l'exemple précédent sur la variable multi-dimensionnelle _service_ → "{{ service[type]['name'] }}" a pour valeur _apache_ \
+Il est alors possible d'appeler les variables aisément dans le playbook : _"{{  variable_test }}"_, par exemple pour l'exemple précédent sur la variable multi-dimensionnelle _service_ → "{{ service[type]['name'] }}" a pour valeur _apache_. \
 On peut également vouloir les définir lors de l'exécution du playbook grâce au module set_fact : #set text(fill: blue); https://docs.ansible.com/ansible/latest/collections/ansible/builtin/set_fact_module.html
 ```yml
 - name: Initialisation de variables
@@ -297,15 +346,36 @@ On peut également vouloir les définir lors de l'exécution du playbook grâce 
   debug:
     msg: "{{ variable }}"
 ```
+#set text(fill: black);
+Dernier point à ce sujet, il est également possible de définir des variables d'inventaire, soit pour limiter l'accessibilité de ces variables à certains nœuds, soit pour faire varier les valeurs de ces variables en fonction des nœuds.
+Pour reprendre l'exemple d'inventaire vu précédemment :
+```yml
+---
+all:
+  children:
+    parent1:
+      hosts:
+        ansible_host_1:
+      children:
+        enfant1:
+          hosts:
+            ansible_host_2:
+            ansible_host_3:
+          vars:
+            var1: "Hello"
+        enfant2:
+          hosts:
+            ansible_host_4:
+          var2: "World!"
+```
 
 #pagebreak()
 
 #align(left, text(17pt)[*Création d'un premier playbook*])
 #set text(fill: black);
 #text(style: "italic")[
-  Q2) Créez un ficher _playbook.yml_ ainsi que son fichier de variables _vars.yml_ (qu'il ne faudra pas oublier d'importer) puis un fichier texte vierge.
-  L'objectif sera maintenant de créer un nouvel utilisateur _admin_, créez un dossier /tmp/admin qui lui appartiendra et donnez-lui les droits d'écriture sur ce dossier, ensuite copiez-y le fichier texte. \
-  Au lieu de créer un unique utilisateur, vous pouvez essayer d'en créer un autre, sauf qu'au lieu de faire deux tâches distinctes il faudra comprendre comment fonctionnent les boucles appliquées à une seule tâche ! \
+  Q2) Créez un ficher _playbook.yml_ ainsi que son fichier de variables _vars.yml_ (qu'il ne faudra pas oublier d'importer au début du playbook !) puis un fichier texte vierge.
+  L'objectif sera maintenant de créer un nouvel utilisateur _cidre_ avec un mot de passe classique, puis de créer un dossier /tmp/cidre qui lui appartiendra et donnez-lui les droits d'écriture sur ce dossier, ensuite copiez-y le fichier texte. \
   _L'intérêt ici étant également de n'avoir aucune variable définie dans le playbook, mais uniquement dans le fichier de variables !_ \ \
 ]
 #text(style: "italic", fill: red)[
@@ -317,7 +387,7 @@ On peut également vouloir les définir lors de l'exécution du playbook grâce 
     become: true
     tasks:
     [...]
-  ``` \
+  ```
 ]
 #text(style: "italic")[
   Vous allez maintenant pouvoir lancer votre premier playbook. Pour cela il suffit d'exécuter la commande :
@@ -325,20 +395,31 @@ On peut également vouloir les définir lors de l'exécution du playbook grâce 
   ansible-playbook -i inventory.yml playbook.yml
   ```
   Encore une fois, si tout se déroule comme prévu vous pourrez voir Ansible effectuer les différentes tâches sur les différents nœuds, l'un après l'autre.
-  Une fois l'exécution terminée, vous pouvez vérifier que tout s'est bien passé en vous connectant sur l'un des nœuds cibles, puis en vérifiant la présence du fichier texte dans /tmp/admin.
+  Une fois l'exécution terminée, vous pouvez vérifier que tout s'est bien passé en vous connectant sur l'un des nœuds cibles, puis en vérifiant la présence du fichier texte dans /tmp/cidre.
+]
+
+#text(style: "italic")[
+  Q2.1) Exercice similaire, mais nous allons maintenant introduire les boucles d'Ansible : _with_items_.\
+  Le but sera de créer plusieurs répertoires dans /tmp/(cidre1, cidre2...).\
+
+  Q2.2) Même exercice, mais cette fois-ci nous allons itérer sur différents dictionnaires, pour copier des fichiers dans différents répertoires.
+  On voudra par exemple avoir le fichier1 dans cidre1, le fichier2 dans cidre2, etc.\
 ]
 
 #align(left, text(17pt)[*Approfondissement du playbook*])
 
-Toutes les propositions de solution seront accessibles sur le repo suivant : FILL \
+Toutes les *propositions* de solution sont accessibles sur le repo cloné, dans la section : _solutions_  \
+Par souci de clarté, il est recommandé de créer un nouveau playbook pour chaque question (et cela va grandement vous faciliter la tâche pour la dernière question à traiter !) \
 Maintenant que vous avez compris les bases structurelles d'un playbook, vous allez pouvoir effectuer des tâches un peu plus spécifiques avec Ansible. \
+
+#align(left, text(14pt)[*Déploiment de clé SSH*])
 
 #text(style: "italic")[
   Q3) Créez un nouvel utilisateur sur les nœuds cibles. Générez une clé SSH en local puis déployez la clé publique en tant que clé autorisée sur les nœuds cibles. \
   Pour cela vous aurez besoin de différents modules Ansible :
   - user : #set text(fill: blue); https://docs.ansible.com/ansible/latest/collections/ansible/builtin/user_module.html
-  - openssh_keypair : #set text(fill: blue); https://docs.ansible.com/ansible/latest/collections/community/crypto/openssh_keypair_module.html
-  - authorized_key : #set text(fill: blue); https://docs.ansible.com/ansible/latest/collections/ansible/posix/authorized_key_module.html
+  - openssh_keypair:#set text(fill: blue);https://docs.ansible.com/ansible/latest/collections/community/crypto/openssh_keypair_module.html
+  - authorized_key:#set text(fill: blue);https://docs.ansible.com/ansible/latest/collections/ansible/posix/authorized_key_module.html
 ]
 
 #text(style: "italic", fill: red)[
@@ -349,33 +430,23 @@ Maintenant que vous avez compris les bases structurelles d'un playbook, vous all
   (Cependant générer une clé localement nécessite un mot de passe root. Il faut donc ajouter une option à votre ligne de commande pour fournir ce mot de passe manuellement, jetez un coup d'œil à : #set text(fill: blue); https://docs.ansible.com/ansible/2.8/cli/ansible-playbook.html #set text(fill: black);)
 ]
 
-#pagebreak()
+#align(left, text(14pt)[*Découverte du module APT d'Ansible et gestion de service*])
 
-Avez-vous déjà entendu parler de Suricata, ce magnifique outil open source de détection d'intrusion ? \
-Pour la prochaine étape, il s'agira d'installer Suricata sur tous les nœuds cibles, et s'assurer que ces instances de Suricata soient persistantes même après un reboot inopiné. \
-Une installation « propre » de Suricata passe par ces différentes étapes :
-
-1 ) Update du cache APT
-
-2 ) Ajouter le repo APT de Suricata \ 
-
-3 ) Installer le package Suricata \
-
-4 ) Modifier le fichier de configuration de Suricata à notre guise \
-
-5 ) Génération des règles de Suricata, permettant la détection de certaines menaces \
-
-6 ) Lancement de Suricata \ \
+Pour la prochaine étape, il s'agira d'installer un service grâce au module _apt_ d'Ansible. 
+Ici nous souhaitons tout d'abord utiliser un paramètre du module apt qui permet d'update et upgrade le cache des packages : https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_module.html
 
 #text(style: "italic")[
-  Q4) Quelques indications pour ces étapes : \ \
-  1 ) Un paramètre du module apt permet d'update le cache : #set text(fill: blue); https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_module.html #set text(fill: black); \ \
-  2 ) Pour les repos APT il ne vaut pas utiliser le module apt mais plutôt apt_repository : #set text(fill: blue); https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_repository_module.html #set text(fill: black); (le repo de Suricata est : *ppa:oisf/suricata-stable*) \ \
-  3 ) Voir le cheat sheet pour l'installation de packages ! (il ne faut pas chercher bien loin pour le nom de celui de Suricata) \ \
-  4 ) Pour modifier un fichier de configuration on peut utiliser le module _lineinfile_ : #set text(fill: blue); https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html #set text(fill: black);. _lineinfile_ se base sur les expressions regex (_regexp_) ou bien sur une chaîne de caractères écrite à la main (_search_string_) et remplace les occurences par _line_. L'idée ici est de modifier les différentes interfaces d'écoute de Suricata (_ip a_ sur un des nœuds), ainsi que la « range » d'IPs qui se matérialise par la variable _HOME_NET_ dans → #set text(fill: blue); https://github.com/OISF/suricata/blob/master/suricata.yaml.in #set text(fill: black); \ \
-  5 ) Cette tâche un peu particulière nécessite simplement de lancer une commande (cheat sheet) intégrée au package surciata : _suricata_update_ \ \
-  6 ) Cheat sheet systemd ! Il faudra également régarder les paramètres proposés dans la documentation pour la résistance aux crashs
+  Q4.1) Installez le service _apache2_ sur les nœuds cibles. Il y a deux manières de procéder :
+  - Soit vous pouvez simplement récupérer le package depuis les dépôts par défaut, en utilisant le module apt lui-même, voir le cheat sheet pour l'installation de package, le paramètre state est important !
+  - Soit vous pouvez ajouter le dépôt localement et installer le module depuis ce dépôt. Dans ce second cas il faudra faire usage du module apt_repository https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_repository_module.html (le repo d'apache2 est ppa:ondrej/apache2)\
+  Q4.2) Une fois le service installé, il faut le lancer. Pour cela il faut utiliser le module _service_ d'Ansible : https://docs.ansible.com/ansible/latest/collections/ansible/builtin/service_module.html. Une option requise pour assurer la liveness du service est le démarrage au boot de celui-ci. Cette option est indiquée dans la documentation.\
+
+  Q4.3) Nous pouvons également avoir envie de modifier le fichier de configuration du service. Nous découvrirons plus tard les templates qui facilitent grandement ce genre de modification, mais pour l'instant nous allons nous contenter de découvrir le module _lineinfile_ : https://docs.ansible.com/ansible/latest/collections/ansible/builtin/systemd_module.html. Lineinfile se base sur les expressions regex : *regexp* ou bien sur une chaîne de caractères écrite à la main : *search_string* et remplace les occurences par *line*. \
+
+  Q4.4) Après ces modifications faites à la main, il faut penser à relancer le service pour qu'elles soient appliquées. Il faut donc utiliser une nouvelle fois le module apt, avec une légère variation pour répondre à notre besoin.
 ]
+
+Voilà, vous venez de lancer votre premier service avec Ansible ! On peut être amené à se demander si le fait de lancer le service pour le redémarrer ensuite n'est pas redondant en termes de tâches, et la réponse est oui. À la place on peut ajouter une option au module systemd qui permet de recharger automatiquement le service si le fichier de configuration a été modifié grâce à un daemon.
 
 #pagebreak()
 
@@ -395,10 +466,10 @@ Les handlers doivent être rédigés sous cette forme dans le playbook :\
         <module/tâche>: <paramètres>
   ``` \
 Pour cela, il faut utiliser le module _notify_ : #set text(fill: blue); https://docs.ansible.com/ansible/latest/collections/ansible/builtin/notify_module.html #set text(fill: black); \
-Ce module permet de notifier un handler, qui sera alors appelé après cette tâche. \ \
+Ce module permet d'appeler un handler, qui sera alors appelé après cette tâche. \ \
 
 #text(style: "italic")[
-  Q5) Installez _apache2_, lancez-le, créez un handler qui permettra de redémarrer apache2, faites une modification du fichier de configuration qui se situe dans _/etc/apache2/apache2_.conf, puis notifiez le handler créé précédemment. \
+  Q5) Reprenez le playbook d'installation et de lancement d'_apache2_, créez un handler qui permettra de redémarrer apache2, faites une modification du fichier de configuration qui se situe dans _/etc/apache2/apache2_.conf, puis notifiez le handler créé précédemment. \
   Vérifiez que le service a bien été redémarré, vous pouvez même tenter de relancer le playbook plusieurs fois avec d'autres modifications pour vous assurer que toutes les modifications sont bien appliquées à chaque itération.
 ]
 
@@ -407,9 +478,9 @@ Ce module permet de notifier un handler, qui sera alors appelé après cette tâ
 #align(left, text(17pt)[*Protection des informations confidentielles*])
 
 Il est possible que certaines tâches nécessitent des informations confidentielles, comme des mots de passe, des clés SSH, etc. \
-C'est pour ça qu'Ansible met à disposition une feature qui est Ansible Vault et qui permet de chiffrer ces données. \
+C'est pour ça qu'Ansible met à disposition une feature qui est _Ansible Vault_ et qui permet de chiffrer ces données. \
 Pour cela, il faut dans un premier temps se servir de la commande permettant de chiffrer un fichier : #set text(fill: blue); https://docs.ansible.com/ansible/latest/vault_guide/vault_encrypting_content.html #set text(fill: black); \
-Attention, _encrypt_string_ est pratique pour définir une variable et la chiffrer mais elle devient très peu modulable avec Ansible Vault (pour l'éditer ou la visualiser) par exemple : \
+Il existe aussi _encrypt_string_ qui est pratique pour définir une variable et la chiffrer mais elle devient très peu modulable avec Ansible Vault (pour l'éditer ou la visualiser) par exemple : \
 ```sh
 ansible-vault encrypt_string 'Mon petit secret' --name 'variable_secret'
 New Vault password: *****
@@ -418,7 +489,7 @@ variable_secret: !
   $ANSIBLE_VAULT;1.1;AES256
   [...]
 
-ansible -i "127.0.0.1," all --ask-vault -m debug -a "var=variable_secret"
+ansible -i "127.0.0.1" all --ask-vault -m debug -a "var=variable_secret"
 Vault password: *****
 # Aucun problème à relever
 127.0.0.1 | SUCESS => {
@@ -438,7 +509,7 @@ ERROR! input is not vault encrypted data for variables.yml
 Il faut donc préférer chiffrer directement notre fichier de variables _vars.yml_ grâce à _encrypt_ !
 
 #text(style: "italic")[
-  Q6) Reprenez le playbook avec lequel vous avez créé un utilisateur et ajoutez-lui un mot de passe dans la tâche dédiée, puis faites en sorte que ce mot de passe soit chiffré dans le fichier _vars.yml_, puis testez d'y accéder.
+  Q5) Reprenez le playbook avec lequel vous avez créé un utilisateur et ajoutez-lui un mot de passe dans la tâche dédiée, puis faites en sorte que ce mot de passe soit chiffré dans le fichier _vars.yml_, puis testez d'y accéder.
 ]
 
 #pagebreak()

@@ -1,4 +1,3 @@
----
 - hosts: all
   become: yes
   vars_files:
@@ -7,34 +6,34 @@
     - name: Update et upgrade apt packages
       apt:
         update_cache: yes
+
     - name: Installation software-properties-common
       apt:
         name: "{{ spc }}"
-    - name: Ajout du repo Suricata
-      become: yes
-      apt_repository:
-        repo: "{{ suricata_repo }}"
         state: present
 
-    - name: Installation de suricata
+    - name: Installation apache2
       apt:
-        name: "{{ item }}"
-        state: present
-      with_items:
-        "{{ apt_dependencies }}"
+        name: "{{ apache_service }}"
+        state: latest
 
-    - name: Modification du fichier de conf Suricata
-      template:
-        src: "{{ suricata_conf_template }}"
-        dest: "{{ suricata_conf_path }}"
-        mode: 0644
-      
-    - name: Generation de /var/lib/suricata/rules
-      command: sudo {{ suricata_update_rules }}
-
-    - name: Lancement de Suricata
+    - name: Démarrage apache2
       systemd:
-        name: "{{ suricata_service }}"
+        name: "{{ apache_service }}"
         state: started
         enabled: true
         daemon_reload: true
+
+    - name: Modif de apache2.conf
+      lineinfile:
+        path: "{{ apache_conf_file }}"
+        regexp: '^ServerAdmin'
+        line: 'ServerAdmin test1@fr.clara.net'
+      notify:
+      - Rédémarrage apache2
+      
+  handlers:
+    - name: Rédémarrage apache2
+      systemd:
+        name: "{{ apache_service }}"
+        state: restarted

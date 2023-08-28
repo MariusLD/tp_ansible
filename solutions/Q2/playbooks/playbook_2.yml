@@ -1,0 +1,50 @@
+---
+- hosts: all
+  become: yes
+  vars_files:
+    - ../vars.yml
+  tasks:
+    - name: Création de l'utilisateur {{ admin_user }}
+      user:
+        name: "{{ admin_user }}"
+        groups: "{{ admin_group }}"
+        append: yes
+        state: present
+        shell: /bin/sh
+        password: "{{ admin_password | password_hash('sha512') }}"
+
+    - name: Ajout de {{ admin_user }} aux sudoers
+      copy:
+        dest: "/etc/sudoers.d/{{ admin_user }}"
+        content: "{{ admin_user }} ALL=(ALL) NOPASSWD: ALL"
+
+    - name: Création du répertoire {{ admin_path }}
+      file:
+        path: "{{ admin_path }}/{{ item.dir }}/{{ item.file }}"
+        state: directory
+        owner: "{{ admin_user }}"
+        group: "{{ admin_group }}"
+        mode: "{{ admin_repo_mode }}"
+      with_items:
+        - { dir: '{{ admin_user }}1', file: file1.txt }
+        - { dir: '{{ admin_user }}2', file: file2.txt }
+        - { dir: '{{ admin_user }}3', file: file2.txt }
+
+    - name: Vérification si rsync est installé
+      ansible.builtin.command: "which rsync"
+      register: rsync_check
+      changed_when: false
+      ignore_errors: true
+
+    - name: Installation de rsync
+      ansible.builtin.apt:
+        name: rsync
+        state: present
+      when: rsync_check.rc != 0
+    
+    - name: Synchronisation du dossier distant admin_path avec le dossier local files
+      synchronize:
+        src: "{{ admin_path }}"
+        dest: "{{ sync_path }}"
+        recursive: yes
+        mode: pull

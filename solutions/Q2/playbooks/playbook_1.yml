@@ -2,27 +2,31 @@
 - hosts: all
   become: yes
   vars_files:
-    - vars.yml
+    - ../vars.yml
   tasks:
     - name: Création de l'utilisateur {{ admin_user }}
       user:
         name: "{{ admin_user }}"
-        group: "{{ admin_group }}"
+        groups: "{{ admin_group }}"
         append: yes
-        shell: /bin/bash
-        password: "password"
-    - name: Ajout de devops aux sudoers
+        state: present
+        shell: /bin/sh
+        password: "{{ admin_password | password_hash('sha512') }}"
+
+    - name: Ajout de {{ admin_user }} aux sudoers
       copy:
-        dest: /etc/sudoers.d/devops
+        dest: "/etc/sudoers.d/{{ admin_user }}"
         content: "{{ admin_user }} ALL=(ALL) NOPASSWD: ALL"
-    - name: Création du répertoire admin
+
+    - name: Création du répertoire {{ admin_path }}
       file:
         path: "{{ admin_path }}"
         state: directory
         owner: "{{ admin_user }}"
         group: "{{ admin_group }}"
         mode: "{{ admin_repo_mode }}"
-    - name: Copie du fichier texte dans le répertoire admin
+
+    - name: Copie du fichier texte dans le répertoire
       copy:
         src:  "{{ blank_file }}"
         dest: "{{ admin_path }}"

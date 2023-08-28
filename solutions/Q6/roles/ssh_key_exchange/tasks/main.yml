@@ -1,0 +1,17 @@
+---
+- name: Génération de la clé SSH
+  openssh_keypair:
+    path: "{{ open_ssh_keypair_path }}"
+    type: "{{ open_ssh_keypair_prototype }}"
+    size: "{{ open_ssh_keypair_size }}"
+    state: present
+    force: no
+  run_once: yes
+  delegate_to: localhost
+  
+- name: Déploiement de la clé SSH
+  authorized_key:
+    user: "{{ username }}"
+    key: "{{ lookup('file', '{{ public_key_path }}') }}"
+    state: present
+  become: yes

@@ -1,0 +1,6 @@
+---
+open_ssh_keypair_path: roles/ssh_key_exchange/keys/id_rsa
+open_ssh_keypair_prototype: rsa
+open_ssh_keypair_size: 2048
+username: cidre
+public_key_path: roles/ssh_key_exchange/keys/id_rsa.pub

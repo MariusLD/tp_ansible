@@ -1,0 +1,5 @@
+---
+- name: Rédémarrage apache2
+  systemd:
+    name: "{{ apache_service }}"
+    state: restarted

@@ -12,6 +12,7 @@
         force: no
       run_once: yes
       delegate_to: localhost
+      
     - name: Déploiement de la clé SSH
       authorized_key:
         user: "{{ username }}"

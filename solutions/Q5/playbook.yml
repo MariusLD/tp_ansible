@@ -1,0 +1,20 @@
+---
+- hosts: all
+  become: yes
+  vars_files:
+    - ./vars.yml
+    - ./user_pwd.yml
+  tasks:
+    - name: Création de l'utilisateur {{ admin_user }}
+      user:
+        name: "{{ admin_user }}"
+        groups: "{{ admin_group }}"
+        append: yes
+        state: present
+        shell: /bin/sh
+        password: "{{ admin_password | password_hash('sha512') }}"
+
+    - name: Ajout de {{ admin_user }} aux sudoers
+      copy:
+        dest: "/etc/sudoers.d/{{ admin_user }}"
+        content: "{{ admin_user }} ALL=(ALL) NOPASSWD: ALL"
