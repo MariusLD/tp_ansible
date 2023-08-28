@@ -21,6 +21,7 @@ createContainers(){
   CONTAINER_NUMBER=$1
   CONTAINER_HOME=/home/${CONTAINER_USER}
   CONTAINER_CMD="sudo podman exec "
+  USEPAM_VALUE="no"
 
   id_already=`sudo podman ps -a --format '{{ .Names}}' | awk -v user="${CONTAINER_USER}" '$1 ~ "^"user {count++} END {print count}'`
   id_min=$((id_already + 1))
@@ -34,7 +35,8 @@ createContainers(){
 		${CONTAINER_CMD} ${CONTAINER_USER}-debian-$i /bin/sh -c "chmod 600 ${CONTAINER_HOME}/.ssh/authorized_keys && chown ${CONTAINER_USER}:${CONTAINER_USER} ${CONTAINER_HOME}/.ssh/authorized_keys"
 		${CONTAINER_CMD} ${CONTAINER_USER}-debian-$i /bin/sh -c "echo '${CONTAINER_USER}   ALL=(ALL) NOPASSWD: ALL'>>/etc/sudoers"
     ${CONTAINER_CMD} ${CONTAINER_USER}-debian-$i /bin/sh -c "sed -i 's#deb http://deb.debian.org/debian stretch-backports main#deb http://archive.debian.org/debian stretch-backports main#' /etc/apt/sources.list"
-		${CONTAINER_CMD} ${CONTAINER_USER}-debian-$i /bin/sh -c "service ssh start"
+		${CONTAINER_CMD} ${CONTAINER_USER}-debian-$i /bin/sh -c "sed -i 's/^UsePAM.*/UsePAM ${USEPAM_VALUE}/' /etc/ssh/sshd_config"
+    ${CONTAINER_CMD} ${CONTAINER_USER}-debian-$i /bin/sh -c "service ssh start"
 	done
 
 	infosContainers
