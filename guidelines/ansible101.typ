@@ -65,16 +65,16 @@ stroke: white )
 Qu'est-ce qu'Ansible ? Il s'agit d'une plateforme de gestion de configuration et d'automatisation open source. Ansible permet notamment de gérer des configurations et d'approvisionner des machines ou bien même déployer des programmes de manière automatisée et multi-environnements pour plus de flexibilité. Les cas d'utilisations sont multiples et variés, que ce soit pour l'automatisation cloud hybride, en passant par l'automatisation réseau jusqu'à l'automatisation sécurité. \ \
 
 L'architecture d'Ansible est composée de deux parties : Ansible Workstation et Ansible Nodes. Ansible Workstation correspond à la machine qui va permettre de gérer les configurations et d'automatiser les tâches. Ansible Nodes correspond aux machines qui vont être gérées par la partie Ansible Workstation. 
-La Workstation comprend deux artéfacts : l'Inventaire et un/plusieurs Playbook(s). L'inventaire est un fichier qui contient la liste des machines à gérer. Tandis que les playbooks sont des fichiers YAML qui contiennent les différentes tâches d'automatisation à effectuer sur les machines renseignées dans l'inventaire. \ \
+La Workstation comprend deux artéfacts : l'*Inventaire* et un/plusieurs *Playbook(s)*. L'inventaire est un fichier qui contient la liste des machines à gérer. Tandis que les playbooks sont des fichiers YAML qui contiennent les différentes tâches d'automatisation à effectuer sur les machines renseignées dans l'inventaire. \ \
 Ansible est agentless, ainsi il n'y a rien besoin d'installer sur les nœuds cibles, il suffit simplement d'avoir un accès SSH vers ces différents nœuds pour que les tâches puissent être effectuées. \
-Enfin, Ansible est très intéressant d'un point de vue modularité et réutilisabilité notamment grâce aux nombreux modules pré-existants, mais également grâce à une nouvelle notion : les Roles. Les rôles permettent d'apporter de la clareté dans les playbooks et de diviser ces derniers en sous-parties qui auront chacune un rôle bien défini. Ces rôles très spécifiques peuvent alors être réutilisés dans n'importe quels playbooks, mais sont aussi très largement partagés sur GitHub, ce qui permet de gagner du temps et de ne pas réinventer la roue. 
+Enfin, Ansible est très intéressant d'un point de vue modularité et réutilisabilité notamment grâce aux nombreux modules pré-existants, mais également grâce à une nouvelle notion : les *Roles*. Les rôles permettent d'apporter de la clareté dans les playbooks et de diviser ces derniers en sous-parties qui auront chacune un rôle bien défini. Ces rôles très spécifiques peuvent alors être réutilisés dans n'importe quels playbooks, mais sont aussi très largement partagés sur GitHub, ce qui permet de gagner du temps et de ne pas réinventer la roue. 
 
 #pagebreak()
 
 #align(left, text(17pt)[*Installation d'Ansible*])
 
 #text(style: "italic")[
-  Disclaimer : Ansible est Unix/Linux-based, pour les utilisateurs Windows il faudra donc passer par WSL :) 
+  Disclaimer : Ansible est Unix/Linux-based, pour les utilisateurs Windows il faudra donc passer par WSL ou bien une VM.
 ]
 #v(5pt)
 Il vous faudra tout d'abord vous assurer d'avoir pip sur votre machine pour pouvoir installer Ansible :
@@ -138,7 +138,7 @@ Pour cette étape, l'objectif est de définir un fichier qui va donner les instr
 Il peut alors s'agir d'un nœuds ou bien d'un groupe de nœuds. \
 Par défaut le groupe *all*  est le groupe racine qui comprendra tous nos nœuds. \
 Il existe différents formats d'inventaire : init, yaml, json... Nous allons d'abord voir la structure de l'inventaire au format init, puis nous passerons au format yaml qui est plus modulable et plus facile à manipuler. \
-Avec votre éditeur de texte préféré vous allez pouvoir créer un fichier nommé « inventory.yml » où la structure par défaut sera :
+Une structure basique d'inventaire au format init est la suivante :
 ```yml
 [all]
 ansible_host_1: <adresse IP du nœud ansible_host_1>
@@ -203,12 +203,12 @@ all:
 #v(10pt)
 
 #text(style: "italic")[
-  Q1) Complétez cet inventaire pour correspondre au format init et créez 5 nouveaux nœuds, ajoutez-les à l'inventaire en reprenant la structure ci-dessus.\
+  Q1) Complétez cet inventaire pour correspondre à l'exemple du format init et créez 5 nouveaux nœuds, ajoutez-les à l'inventaire en reprenant la structure ci-dessus.\
   Puis testez votre inventaire grâce à la commande :
   ```sh
     ansible <groupe> -m ping -i inventory.yml
   ```
-  Attention à l'indentation en YAML, un espace de moins ou de plus peut changer la signification d'un fichier de configuration !
+  Attention à l'indentation en YAML, un espace de moins ou de plus peut changer la signification d'un fichier de configuration, et les groupes auxquels un nœud peut appartenir !
   Si tout se déroule comme prévu, vous ne verrez que les *pongs* des nœuds faisant partie du groupe renseigné. 
 ]
 
@@ -263,7 +263,7 @@ Les modules suivants ne sont pas forcément tous nécessaires pour la suite mais
     src: /path/du/fichier/à/récupérer
     dest: /path/où/save/le/fichier
 ``` \
-- *file* : permet de créer, supprimer ou modifier des fichiers : #set text(fill: blue); https://docs.ansible.com/ansible/latest/collections/ansible/builtin/file_module.html
+- *file* : permet de créer, supprimer ou modifier des fichiers/répertoires : #set text(fill: blue); https://docs.ansible.com/ansible/latest/collections/ansible/builtin/file_module.html
 ```yml
 - name: Change les permissions d'un fichier
   file:
@@ -281,12 +281,22 @@ Les modules suivants ne sont pas forcément tous nécessaires pour la suite mais
     state: <started/stopped/restarted>
 ``` \
 - *command* : permet d'exécuter des commandes, préciser des arguments, et bypass le shell : #set text(fill: blue); https://docs.ansible.com/ansible/latest/collections/ansible/builtin/command_module.html \
-_Si vous avez tout de même besoin d'une fonctionnalité du shell, vous pouvez vous reférer au module shell : #set text(fill: blue); https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html _
+_Si vous avez tout de même besoin d'une fonctionnalité du shell, vous pouvez vous reférer au module shell : #set text(fill: blue); https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html _ #set text(fill: black);
 ```yml
 - name: Exécution d'une commande
   command: <commande>
 ```
-
+- *user* : permet de créer, supprimer ou modifier des utilisateurs : #set text(fill: blue); https://docs.ansible.com/ansible/latest/collections/ansible/builtin/user_module.html
+```yml
+- name: Création d'un utilisateur
+  user:
+    name: <nom de l'utilisateur>
+    password: <mot de passe>
+    state: <present/absent>
+    shell: <shell>
+    groups: <groupes>
+    append: <yes/no>
+``` \
 On peut également vouloir définir des variables dans notre playbook, on peut soit les déclarer en haut de ce dernier :
 ```yml
 ---
@@ -298,7 +308,6 @@ On peut également vouloir définir des variables dans notre playbook, on peut s
 ```
 Il existe également les variables multi-dimensionnelles :
 ```yml
----
 - hosts: <groupe>
   vars:
     type: web
@@ -317,7 +326,7 @@ Une bien meilleure pratique est de définir un fichier de variables à part, com
 variable_test: test
 [...]
 ```
-#pagebreak()
+
 Puis l'intérêt est de l'inclure dans le playbook :
 ```yml
 ---
@@ -404,16 +413,14 @@ all:
 
 #align(left, text(17pt)[*Approfondissement du playbook*])
 
-Toutes les *propositions* de solution sont accessibles sur le repo cloné, dans la section : _solutions_  \
 Par souci de clarté, il est recommandé de créer un nouveau playbook pour chaque question (et cela va grandement vous faciliter la tâche pour la dernière question à traiter !) \
 Maintenant que vous avez compris les bases structurelles d'un playbook, vous allez pouvoir effectuer des tâches un peu plus spécifiques avec Ansible. \
 
 #align(left, text(14pt)[*Déploiment de clé SSH*])
 
 #text(style: "italic")[
-  Q3) Créez un nouvel utilisateur sur les nœuds cibles. Générez une clé SSH en local puis déployez la clé publique en tant que clé autorisée sur les nœuds cibles. \
+  Q3) Générez une clé SSH en local puis déployez la clé publique en tant que clé autorisée sur les nœuds cibles pour l'utilisateur cidre. \
   Pour cela vous aurez besoin de différents modules Ansible :
-  - user : #set text(fill: blue); https://docs.ansible.com/ansible/latest/collections/ansible/builtin/user_module.html
   - openssh_keypair:#set text(fill: blue);https://docs.ansible.com/ansible/latest/collections/community/crypto/openssh_keypair_module.html
   - authorized_key:#set text(fill: blue);https://docs.ansible.com/ansible/latest/collections/ansible/posix/authorized_key_module.html
 ]
