@@ -14,11 +14,6 @@
   29 août 2023
 ]
 
-#table(
-columns: (22%, 250pt, 22%), inset: 8pt, align: horizon, image("logos/esir.png"), 
-[], image("logos/Logo-Universite-de-Rennes-1.png"),
-stroke: white )
-
 #v(120pt)
 
 #line(length: 100%)
@@ -33,7 +28,7 @@ stroke: white )
 columns: (100%), inset: 50pt, align: center, image("logos/Ansible_logo.svg.png", width: 40%),
 stroke: white )
 
-#v(110pt)
+#v(175pt)
 
 #align(left, text(17pt)[#year])
 
