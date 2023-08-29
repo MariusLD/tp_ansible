@@ -12,9 +12,7 @@
     daemon_reload: true
 
 - name: Modif de apache2.conf
-  lineinfile:
-    path: "{{ apache_conf_file }}"
-    regexp: '^ServerAdmin'
-    line: 'ServerAdmin test1@fr.clara.net'
-  notify:
-  - Rédémarrage apache2
+  template:
+    src: "{{ apache_jinja }}"
+    dest: "{{ apache_conf_file }}"
+    mode: 0644

@@ -1,4 +1,6 @@
 ---
 apache_service: apache2
-apache_conf_file: /etc/{{ apache_service }}/{{ apache_service }}.conf
+apache_conf: "{{ apache_service }}.conf"
+apache_conf_file: /etc/{{ apache_service }}/{{ apache_conf }}
+apache_jinja: "{{ apache_service }}_conf.j2"
 server_admin: test1@fr.clara.net

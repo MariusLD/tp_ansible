@@ -11,11 +11,12 @@ all:
               ansible_host: 
             ansible_host_3:
               ansible_host:
-        enfant2:
-          hosts:
-            ansible_host_4:
-              ansible_host: 
         enfant3:
           hosts:
             ansible_host_5:
               ansible_host:
+          children:
+            enfant2:
+              hosts:
+                ansible_host_4:
+                  ansible_host: 
