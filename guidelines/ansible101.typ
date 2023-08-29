@@ -86,10 +86,16 @@ Si certains ont déjà Ansible d'installé, une mise à jour s'impose :
 ```sh
 python3 -m pip install --upgrade --user ansible
 ```
-Il ne reste plus qu'à vérifier que l'installation s'est bien déroulée et tout est terminé !
+Il ne reste plus qu'à vérifier que l'installation s'est bien déroulée !
 ```sh
 ansible --version
 ```
+Un dernier point à effectuer, avant de pouvoir commencer, est d'aller modifier le fichier de configuration d'Ansible qui se situe dans _/etc/ansible/ansible.cfg_ et d'y ajouter :
+```
+[defaults]
+host_key_checking = False
+```
+pour éviter d'avoir à valider les clés SSH des nœuds cibles à chaque fois que l'on souhaite exécuter un playbook (surtout que nous risquons d'en créer et détruire quelques uns). \
 #v(10pt)
 
 #align(left, text(17pt)[*Déploiement de nœuds*])
@@ -183,7 +189,7 @@ Ici *parent1* contient :
 Nous retrouvons alors une structure en forme d'arbre, où les groupes peuvent être imbriqués les uns dans les autres. \
 
 Pour de petites inventaires le format init est suffisant, mais pour des inventaires plus conséquents il est préférable d'utiliser le format yaml. \
-Pour cela il suffit de créer un fichier _inventory.yml_, et l'équivalent structurel de l'exemple précédent est :
+Pour cela il suffit de créer un fichier _inventory.yml_. Le début de l''équivalent structurel de l'exemple précédent est :
 ```yml
 ---
 all:
@@ -191,24 +197,13 @@ all:
     parent1:
       hosts:
         ansible_host_1:
-      children:
-        enfant1:
-          hosts:
-            ansible_host_2:
-            ansible_host_3:
-        enfant2:
-          hosts:
-            ansible_host_4:
-          children:
-            enfant3:
-            hosts:
-              ansible_host_5:
+          ansible_host: 
 ```
 
 #v(10pt)
 
 #text(style: "italic")[
-  Q1) Créez 5 nouveaux nœuds, ajoutez-les à l'inventaire en reprenant la structure ci-dessus.\
+  Q1) Complétez cet inventaire pour correspondre au format init et créez 5 nouveaux nœuds, ajoutez-les à l'inventaire en reprenant la structure ci-dessus.\
   Puis testez votre inventaire grâce à la commande :
   ```sh
     ansible <groupe> -m ping -i inventory.yml
@@ -344,7 +339,8 @@ On peut également vouloir les définir lors de l'exécution du playbook grâce 
 ```yml
 - name: Affichage d'une variable
   debug:
-    msg: "{{ variable }}"
+    msg: "Blabla {{ variable }} blabla"
+  # var: variable
 ```
 #set text(fill: black);
 Dernier point à ce sujet, il est également possible de définir des variables d'inventaire, soit pour limiter l'accessibilité de ces variables à certains nœuds, soit pour faire varier les valeurs de ces variables en fonction des nœuds.

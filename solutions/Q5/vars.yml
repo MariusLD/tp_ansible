@@ -1,6 +1,2 @@
 admin_user: cidre
 admin_group: sudo
-admin_path: /tmp/{{ admin_user }}
-admin_repo_mode: 0755
-blank_file: ./blank_file.txt
-file_mode: 0644
